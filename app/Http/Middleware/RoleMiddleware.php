@@ -19,9 +19,19 @@ class RoleMiddleware
      */
     public function handle(Request $request, Closure $next, string $role): Response
     {
-        if (Auth::check() && Auth::user()->role === $role) {
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
+
+        // Allow admin to access any role-protected route
+        if (Auth::user()->role === 'admin') {
             return $next($request);
         }
-        abort(403, 'Unauthorized action.');
+
+        if (Auth::user()->role !== $role) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        return $next($request);
     }
 }
