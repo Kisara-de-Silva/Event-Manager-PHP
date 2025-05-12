@@ -11,21 +11,21 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-// 👇 Fallback dashboard route (required for Breeze)
+// Fallback dashboard route (required for Breeze)
 Route::get('/dashboard', function () {
-    return Auth::user()->role === 'admin' 
+    return Auth::user()->role === 'admin'
         ? redirect()->route('admin.dashboard')
         : redirect()->route('user.dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-// 👇 Shared authenticated routes
+// Shared authenticated routes
 Route::middleware('auth')->group(function () {
     // Profile routes (accessible to all authenticated users)
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-    
-    // 👇 User-specific routes
+
+    // User-specific routes
     Route::middleware(['role:user'])->group(function () {
         Route::get('/user/dashboard', [UserController::class, 'index'])->name('user.dashboard');
         Route::resource('events', EventController::class)->only([
@@ -33,14 +33,18 @@ Route::middleware('auth')->group(function () {
         ]);
     });
 
-    // 👇 Admin-specific routes
+    // Admin-specific routes
     Route::middleware(['auth', \App\Http\Middleware\RoleMiddleware::class.':admin'])->group(function () {
         Route::get('/admin/dashboard', [AdminController::class, 'index'])->name('admin.dashboard');
         Route::prefix('admin')->group(function () {
-            Route::resource('events', EventController::class)->except(['create', 'store']);
+            Route::get('/events', [EventController::class, 'index'])->name('admin.events.index');
+            Route::get('/events/{event}', [EventController::class, 'show'])->name('admin.events.show');
+            Route::get('/events/{event}/edit', [EventController::class, 'edit'])->name('admin.events.edit');
+            Route::put('/events/{event}', [EventController::class, 'update'])->name('admin.events.update');
+            Route::delete('/events/{event}', [EventController::class, 'destroy'])->name('admin.events.destroy');
         });
     });
 });
 
-// 👇 Authentication routes
+// Authentication routes
 require __DIR__.'/auth.php';
