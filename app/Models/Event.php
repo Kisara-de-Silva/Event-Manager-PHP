@@ -5,17 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use App\Models\User;
 
 class Event extends Model
 {
     use HasFactory;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'title',
         'description',
@@ -23,9 +17,10 @@ class Event extends Model
         'user_id',
     ];
 
-    /**
-     * Get the user who owns the event.
-     */
+    protected $casts = [
+        'event_date' => 'date', // Add this line to cast to Carbon instance
+    ];
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
