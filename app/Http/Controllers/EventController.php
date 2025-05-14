@@ -8,29 +8,35 @@ use Illuminate\Support\Facades\Auth;
 
 class EventController extends Controller
 {
-    // Show list of events (only for the logged-in user)
+    /**
+     * Display a listing of the resource.
+     */
     public function index()
     {
-        $events = Auth::user()->role === 'admin'
-            ? Event::latest()->get()
-            : Auth::user()->events()->latest()->get();
+        $events = auth()->user()->role === 'admin'
+            ? Event::with('user')->latest()->paginate(10)
+            : Event::where('user_id', auth()->id())->latest()->paginate(10);
 
         return view('events.index', compact('events'));
     }
 
-    // Show form to create a new event
+    /**
+     * Show the form for creating a new resource.
+     */
     public function create()
     {
         return view('events.create');
     }
 
-    // Save new event
+    /**
+     * Store a newly created resource in storage.
+     */
     public function store(Request $request)
     {
         $request->validate([
-            'title' => 'required|string',
+            'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'event_date' => 'required|date',
+            'event_date' => 'required|date|after_or_equal:today',
         ]);
 
         Event::create([
@@ -40,46 +46,66 @@ class EventController extends Controller
             'user_id' => Auth::id(),
         ]);
 
-        return redirect()->route('events.index')->with('success', 'Event created.');
+        return redirect()->route('events.index')
+                        ->with('success', 'Event created successfully.');
     }
 
-    // Show form to edit an event
+    /**
+     * Display the specified resource.
+     */
+    public function show(Event $event)
+    {
+        $this->authorizeEvent($event);
+        return view('events.show', compact('event'));
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
     public function edit(Event $event)
     {
         $this->authorizeEvent($event);
         return view('events.edit', compact('event'));
     }
 
-    // Update an event
+    /**
+     * Update the specified resource in storage.
+     */
     public function update(Request $request, Event $event)
     {
         $this->authorizeEvent($event);
 
         $request->validate([
-            'title' => 'required|string',
+            'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'event_date' => 'required|date',
         ]);
 
         $event->update($request->only('title', 'description', 'event_date'));
 
-        return redirect()->route('events.index')->with('success', 'Event updated.');
+        return redirect()->route('events.index')
+                        ->with('success', 'Event updated successfully.');
     }
 
-    // Delete an event
+    /**
+     * Remove the specified resource from storage.
+     */
     public function destroy(Event $event)
     {
         $this->authorizeEvent($event);
         $event->delete();
 
-        return redirect()->route('events.index')->with('success', 'Event deleted.');
+        return redirect()->route('events.index')
+                        ->with('success', 'Event deleted successfully.');
     }
 
-    // Protect user-specific events
+    /**
+     * Authorize the event action.
+     */
     private function authorizeEvent(Event $event)
     {
         if (Auth::user()->role !== 'admin' && $event->user_id !== Auth::id()) {
-            abort(403);
+            abort(403, 'Unauthorized action.');
         }
     }
 }
