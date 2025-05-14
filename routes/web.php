@@ -36,12 +36,19 @@ Route::middleware('auth')->group(function () {
     // Admin-specific routes
     Route::middleware(['auth', \App\Http\Middleware\RoleMiddleware::class.':admin'])->group(function () {
         Route::get('/admin/dashboard', [AdminController::class, 'index'])->name('admin.dashboard');
+        
         Route::prefix('admin')->group(function () {
+            // Event Management
             Route::get('/events', [EventController::class, 'index'])->name('admin.events.index');
             Route::get('/events/{event}', [EventController::class, 'show'])->name('admin.events.show');
             Route::get('/events/{event}/edit', [EventController::class, 'edit'])->name('admin.events.edit');
             Route::put('/events/{event}', [EventController::class, 'update'])->name('admin.events.update');
             Route::delete('/events/{event}', [EventController::class, 'destroy'])->name('admin.events.destroy');
+            
+            // User Management
+            Route::get('/users', [AdminController::class, 'listUsers'])->name('users.index');
+            Route::get('/users/{user}/edit', [AdminController::class, 'editUser'])->name('users.edit');
+            Route::put('/users/{user}', [AdminController::class, 'updateUser'])->name('users.update');
         });
     });
 });
