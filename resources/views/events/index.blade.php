@@ -44,7 +44,7 @@
                                 @foreach ($events as $event)
                                 <tr>
                                     <td class="px-6 py-4 whitespace-nowrap">{{ $event->title }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">{{ \Carbon\Carbon::parse($event->event_date)->format('F j, Y') }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">{{ $event->event_date->format('F j, Y') }}</td>
                                     @if(auth()->user()->role === 'admin')
                                     <td class="px-6 py-4 whitespace-nowrap">{{ $event->user->name }}</td>
                                     @endif
