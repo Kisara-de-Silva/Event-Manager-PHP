@@ -5,6 +5,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\EventController;
+use App\Http\Middleware\RoleMiddleware;
 use Illuminate\Support\Facades\Auth;
 
 Route::get('/', function () {
@@ -19,39 +20,38 @@ Route::get('/dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 // Shared authenticated routes
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth'])->group(function () {
     // Profile routes (accessible to all authenticated users)
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // User-specific routes
-    Route::middleware(['role:user'])->group(function () {
+    Route::middleware([RoleMiddleware::class.':user'])->group(function () {
         Route::get('/user/dashboard', [UserController::class, 'index'])->name('user.dashboard');
-        Route::resource('events', EventController::class)->only([
-            'index', 'create', 'store', 'edit', 'update', 'destroy'
-        ]);
+        Route::resource('events', EventController::class)->except(['show']);
     });
 
     // Admin-specific routes
-    Route::middleware(['auth', \App\Http\Middleware\RoleMiddleware::class.':admin'])->group(function () {
+    Route::middleware([RoleMiddleware::class.':admin'])->group(function () {
         Route::get('/admin/dashboard', [AdminController::class, 'index'])->name('admin.dashboard');
         
-        Route::prefix('admin')->group(function () {
-            // Event Management
-            Route::get('/events', [EventController::class, 'index'])->name('admin.events.index');
-            Route::get('/events/{event}', [EventController::class, 'show'])->name('admin.events.show');
-            Route::get('/events/{event}/edit', [EventController::class, 'edit'])->name('admin.events.edit');
-            Route::put('/events/{event}', [EventController::class, 'update'])->name('admin.events.update');
-            Route::delete('/events/{event}', [EventController::class, 'destroy'])->name('admin.events.destroy');
-            
-            // User Management
-            Route::get('/users', [AdminController::class, 'listUsers'])->name('users.index');
-            Route::get('/users/{user}/edit', [AdminController::class, 'editUser'])->name('users.edit');
-            Route::put('/users/{user}', [AdminController::class, 'updateUser'])->name('users.update');
+        // Admin Event Management
+        Route::prefix('admin/events')->group(function () {
+            Route::get('/', [EventController::class, 'index'])->name('admin.events.index');
+            Route::get('/{event}', [EventController::class, 'show'])->name('admin.events.show');
+            Route::get('/{event}/edit', [EventController::class, 'edit'])->name('admin.events.edit');
+            Route::put('/{event}', [EventController::class, 'update'])->name('admin.events.update');
+            Route::delete('/{event}', [EventController::class, 'destroy'])->name('admin.events.destroy');
+        });
+        
+        // Admin User Management
+        Route::prefix('admin/users')->name('admin.users.')->group(function () {
+            Route::get('/', [AdminController::class, 'listUsers'])->name('index');
+            Route::get('/{user}/edit', [AdminController::class, 'editUser'])->name('edit');
+            Route::put('/{user}', [AdminController::class, 'updateUser'])->name('update');
         });
     });
 });
 
-// Authentication routes
 require __DIR__.'/auth.php';
