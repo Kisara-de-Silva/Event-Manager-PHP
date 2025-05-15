@@ -9,14 +9,16 @@ class AdminController extends Controller
 {
     public function index()
     {
-        return view('admin.dashboard');
+        $totalUsers = User::where('role', 'user')->count();
+        $totalEvents = \App\Models\Event::count();
+        
+        return view('admin.dashboard', compact('totalUsers', 'totalEvents'));
     }
 
     public function listUsers()
     {
-        return view('admin.users.index', [
-            'users' => User::where('role', '!=', 'admin')->paginate(10)
-        ]);
+        $users = User::where('role', '!=', 'admin')->paginate(10);
+        return view('admin.users.index', compact('users'));
     }
 
     public function editUser(User $user)
@@ -33,6 +35,6 @@ class AdminController extends Controller
         ]);
 
         $user->update($validated);
-        return redirect()->route('users.index')->with('success', 'User updated successfully');
+        return redirect()->route('admin.users.index')->with('success', 'User updated successfully');
     }
 }
